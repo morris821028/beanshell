@@ -30,7 +30,7 @@
 
   <groupId>org.beanshell</groupId>
   <artifactId>bsh</artifactId>
-  <version>3.0.0-SNAPSHOT</version>
+  <version>3.0.0-quantum-SNAPSHOT</version>
   <packaging>bundle</packaging>
 
   <name>BeanShell</name>
@@ -165,6 +165,9 @@
               <javadocFriendlyComments>true</javadocFriendlyComments>
               <static>false</static>
               <usercharstream>true</usercharstream>
+              <excludes>
+                <exclude>JavaCharStream.java</exclude>
+              </excludes>
             </configuration>
           </execution>
         </executions>
@@ -192,6 +195,10 @@
             <version>8.18</version>
           </dependency>
         </dependencies>
+        <configuration>
+          <excludes>bsh/Token*</excludes>
+          <excludes>bsh/JavaCharStream*,bsh/*Parser*,bsh/ParseException*</excludes>
+        </configuration>
         <executions>
           <execution>
             <id>validate</id>
