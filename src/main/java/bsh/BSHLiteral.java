@@ -24,137 +24,152 @@
  *                                                                           *
  *****************************************************************************/
 
-
-
 package bsh;
 
-public final class BSHLiteral extends SimpleNode
-{
-    public static volatile boolean internStrings = true;
+public final class BSHLiteral extends SimpleNode {
+	public static volatile boolean internStrings = true;
 
-    public Object value;
+	public Object value;
 
-    BSHLiteral(int id) { super(id); }
+	BSHLiteral(int id) {
+		super(id);
+	}
 
-    public Object eval( CallStack callstack, Interpreter interpreter )
-        throws EvalError
-    {
-        return value;
-    }
+	public Object eval(CallStack callstack, Interpreter interpreter) throws EvalError {
+		return value;
+	}
 
-    private char getEscapeChar(char ch)
-    {
-        switch(ch)
-        {
-            case 'b':
-                ch = '\b';
-                break;
+	private char getEscapeChar(char ch) {
+		switch (ch) {
+		case 'b':
+			ch = '\b';
+			break;
 
-            case 't':
-                ch = '\t';
-                break;
+		case 't':
+			ch = '\t';
+			break;
 
-            case 'n':
-                ch = '\n';
-                break;
+		case 'n':
+			ch = '\n';
+			break;
 
-            case 'f':
-                ch = '\f';
-                break;
+		case 'f':
+			ch = '\f';
+			break;
 
-            case 'r':
-                ch = '\r';
-                break;
+		case 'r':
+			ch = '\r';
+			break;
 
-            // do nothing - ch already contains correct character
-            case '"':
-            case '\'':
-            case '\\':
-                break;
-        }
+		// do nothing - ch already contains correct character
+		case '"':
+		case '\'':
+		case '\\':
+			break;
+		}
 
-        return ch;
-    }
+		return ch;
+	}
 
-    public void charSetup(String str)
-    {
-        int len = str.toCharArray().length;
+	public static String decode(String str) {
+		StringBuilder sb = new StringBuilder(str.length());
+		char[] chars = str.toCharArray();
+		for (int i = 0; i < chars.length; i++) {
+			char c = chars[i];
+			if (i + 1 < chars.length && c == '\\' && chars[i + 1] == 'u') {
+				char cc = 0;
+				for (int j = 0; j < 4; j++) {
+					char ch = Character.toLowerCase(chars[i + 2 + j]);
+					if ('0' <= ch && ch <= '9' || 'a' <= ch && ch <= 'f' || 'A' <= ch && ch <= 'F') {
+						cc |= (Character.digit(ch, 16) << (3 - j) * 4);
+					} else {
+						cc = 0;
+						break;
+					}
+				}
+				if (cc > 0) {
+					i += 5;
+					sb.append(cc);
+					continue;
+				}
+			}
+			sb.append(c);
+		}
+		return sb.toString();
+	}
 
-        if ( len == 0 || len > 4 || len > 1 && str.charAt(0) != '\\' ) {
-            stringSetup(str);
-            return;
-        }
-        try {
-            char ch = str.charAt(0);
-            if(ch == '\\')
-            {
-                // get next character
-                ch = str.charAt(1);
+	public void charSetup(String str) {
+		str = decode(str);
+		int len = str.toCharArray().length;
 
-                if(Character.isDigit(ch)) {
-                    if (255 < (ch = (char)Integer.parseInt(str.substring(1), 8))) {
-                        stringSetup(str);
-                        return;
-                    }
-                }
-                else
-                    ch = getEscapeChar(ch);
-            }
+		if (len == 0 || len > 4 || len > 1 && str.charAt(0) != '\\') {
+			stringSetup(str);
+			return;
+		}
+		try {
+			char ch = str.charAt(0);
+			if (ch == '\\') {
+				// get next character
+				ch = str.charAt(1);
 
-            value = new Primitive(Character.valueOf(ch).charValue());
-        } catch (Exception e) {
-            stringSetup(str);
-        }
-    }
+				if (Character.isDigit(ch)) {
+					if (255 < (ch = (char) Integer.parseInt(str.substring(1), 8))) {
+						stringSetup(str);
+						return;
+					}
+				} else
+					ch = getEscapeChar(ch);
+			}
 
-    void stringSetup(String str)
-    {
-        StringBuilder buffer = new StringBuilder();
-        int len = str.length();
-        for(int i = 0; i < len; i++)
-        {
-            char ch = str.charAt(i);
-            if(ch == '\\')
-            {
-                // get next character
-                ch = str.charAt(++i);
+			value = new Primitive(Character.valueOf(ch).charValue());
+		} catch (Exception e) {
+			stringSetup(str);
+		}
+	}
 
-                if(Character.isDigit(ch) && Integer.parseInt(String.valueOf(ch)) < 8)
-                {
-                    int endPos = i;
+	void stringSetup(String str) {
+		str = decode(str);
+		StringBuilder buffer = new StringBuilder();
+		int len = str.length();
+		for (int i = 0; i < len; i++) {
+			char ch = str.charAt(i);
+			if (ch == '\\') {
+				// get next character
+				ch = str.charAt(++i);
 
-                    // check the next two characters
-                    int max = Math.min( i + 2, len - 1 );
-                    while(endPos < max)
-                    {
-                        final char t = str.charAt(endPos + 1);
-                        if(Character.isDigit(t) && Integer.parseInt(String.valueOf(t)) < 8)
-                            endPos++;
-                        else
-                            break;
-                    }
-                    String num = str.substring(i, endPos + 1);
-                    if (num.length() == 3 && Integer.parseInt(String.valueOf(ch)) > 3)
-                        ch = (char)Integer.parseInt(str.substring(i, endPos--), 8);
-                    else
-                        ch = (char)Integer.parseInt(num, 8);
-                    i = endPos;
-                }
-                else
-                    ch = getEscapeChar(ch);
-            }
+				if (Character.isDigit(ch) && Integer.parseInt(String.valueOf(ch)) < 8) {
+					int endPos = i;
 
-            buffer.append(ch);
-        }
+					// check the next two characters
+					int max = Math.min(i + 2, len - 1);
+					while (endPos < max) {
+						final char t = str.charAt(endPos + 1);
+						if (Character.isDigit(t) && Integer.parseInt(String.valueOf(t)) < 8)
+							endPos++;
+						else
+							break;
+					}
+					String num = str.substring(i, endPos + 1);
+					if (num.length() == 3 && Integer.parseInt(String.valueOf(ch)) > 3)
+						ch = (char) Integer.parseInt(str.substring(i, endPos--), 8);
+					else
+						ch = (char) Integer.parseInt(num, 8);
+					i = endPos;
+				} else
+					ch = getEscapeChar(ch);
+			}
 
-        String s = buffer.toString();
-        if( internStrings )
-            s = s.intern();
-        value = s;
-    }
+			buffer.append(ch);
+		}
 
-    @Override
-    public String toString() {
-        return super.toString() + ": " + value;
-    }
+		String s = buffer.toString();
+		if (internStrings)
+			s = s.intern();
+		value = s;
+	}
+
+	@Override
+	public String toString() {
+		return super.toString() + ": " + value;
+	}
 }

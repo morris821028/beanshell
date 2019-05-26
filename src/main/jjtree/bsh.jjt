@@ -365,15 +365,16 @@ TOKEN : /* LITERALS */
 |
   < #ESCAPE: "\\" (~["\\"]|["\\"]) >
 |
-  < CHARACTER_LITERAL: "'" (~["'","\n","\r","\\"] | <ESCAPE>)* "'" >
+  < CHARACTER_LITERAL: "'" (~["'","\n","\r","\\"] | <ESCAPE> | <UNICODE_LITERAL>)* "'" >
 |
-  < STRING_LITERAL: "\"" (~["\"","\n","\r","\\"] | <ESCAPE>)* "\"" >
+  < STRING_LITERAL: "\"" (~["\"","\n","\r","\\"] | <ESCAPE> | <UNICODE_LITERAL>)* "\"" >
 |
   < LONG_STRING_LITERAL: "\"\"\"" ( ~["\""] ("\"")? )* "\"\"\"" >
 |
    < FORMAL_COMMENT:
         "/**" (~["*"])* "*" ("*" | (~["*","/"] (~["*"])* "*"))* "/"
     >
+| < UNICODE_LITERAL: ("\\" ["u"] (["0"-"9","a"-"f","A"-"F"])+) >
 }
 
 TOKEN : /* IDENTIFIERS */

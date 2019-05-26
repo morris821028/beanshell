@@ -82,5 +82,33 @@ public class StringLiteralTest {
         final Interpreter interpreter = new Interpreter();
         Assert.assertEquals(expected, interpreter.eval("return " + mode.delimiter() + source + mode.delimiter() + ""));
     }
+    
+    @Test
+	public void parse_unicode_literals_in_comment() throws Exception {
+		final Interpreter interpreter = new Interpreter();
+		Object result = interpreter.eval("// source path: C:\\user\\desktop");
+		Assert.assertEquals(result, null);
+	}
 
+	@Test
+	public void parse_unicode_literals_in_apostrophe() throws Exception {
+		final Interpreter interpreter = new Interpreter();
+		char c = (char) interpreter.eval("return '\\u51ea\'");
+		Assert.assertEquals(c, '\u51ea');
+	}
+
+	@Test
+	public void parse_unicode_literals_in_quotes_and_comment() throws Exception {
+		final Interpreter interpreter = new Interpreter();
+		interpreter.eval("s = \"\\u51ea1234\"; // source path: C:\\user\\desktop");
+		String s = (String) interpreter.eval("s = s + \"\\u51EA3456\"");
+		Assert.assertEquals(s, "\u51ea1234\u51EA3456");
+	}
+
+	@Test
+	public void parse_unicode_literals_return_quotes_and_comment() throws Exception {
+		final Interpreter interpreter = new Interpreter();
+		String s = (String) interpreter.eval("return \"\\u51EA1234\"; // source path: C:\\user\\desktop");
+		Assert.assertEquals(s, "\u51EA1234");
+	}
 }
